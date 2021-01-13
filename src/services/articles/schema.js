@@ -9,7 +9,6 @@ const ArticleSchema = new Schema(
     },
     subHead: {
       type: String,
-      required: true,
     },
     content: {
       type: String,
@@ -34,11 +33,50 @@ const ArticleSchema = new Schema(
         type: String,
         required: true,
       },
+      _id: {
+        type: String,
+        required: true,
+      },
     },
+    reviews: [
+      {
+        author: {
+          name: {
+            type: String,
+            required: true,
+          },
+          img: {
+            type: String,
+            required: true,
+          },
+          _id: {
+            type: String,
+            required: true,
+          },
+        },
+        text: {
+          type: String,
+          required: true,
+        },
+        createdAt: {
+          type: String,
+          required: true,
+        },
+        lastUpdated: {
+          type: String,
+        },
+      },
+    ],
     cover: {
       type: String,
     },
   },
   { timestamps: true }
 );
+ArticleSchema.index({
+  "author.name": "text",
+  headLine: "text",
+  subHead: "text",
+  content: "text",
+});
 module.exports = mongoose.model("Article", ArticleSchema);
