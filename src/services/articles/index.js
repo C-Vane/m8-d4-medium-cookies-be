@@ -9,6 +9,7 @@ const articlesRouter = express.Router();
 articlesRouter.get("/", async (req, res, next) => {
   try {
     const articles = await ArticleSchema.find(req.query.search && { $text: { $search: req.query.search } })
+      .sort({ createdAt: -1 })
       .skip(req.query.page && (req.query.page - 1) * 10)
       .limit(10);
     res.send(articles);
