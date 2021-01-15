@@ -24,36 +24,11 @@ const ArticleSchema = new Schema(
         required: true,
       },
     },
-    author: {
-      name: {
-        type: String,
-        required: true,
-      },
-      img: {
-        type: String,
-        required: true,
-      },
-      _id: {
-        type: String,
-        required: true,
-      },
-    },
+    author: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    claps: [{ type: Schema.Types.ObjectId, ref: "User", required: true }],
     reviews: [
       {
-        author: {
-          name: {
-            type: String,
-            required: true,
-          },
-          img: {
-            type: String,
-            required: true,
-          },
-          _id: {
-            type: String,
-            required: true,
-          },
-        },
+        author: { type: Schema.Types.ObjectId, ref: "User", required: true },
         text: {
           type: String,
           required: true,

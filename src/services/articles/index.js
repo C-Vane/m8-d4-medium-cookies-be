@@ -3,6 +3,7 @@ const express = require("express");
 const { Mongoose, Types } = require("mongoose");
 
 const ArticleSchema = require("./schema");
+const UserSchema = require("./schema");
 
 const articlesRouter = express.Router();
 
@@ -11,7 +12,8 @@ articlesRouter.get("/", async (req, res, next) => {
     const articles = await ArticleSchema.find(req.query.search && { $text: { $search: req.query.search } })
       .sort({ createdAt: -1 })
       .skip(req.query.page && (req.query.page - 1) * 10)
-      .limit(10);
+      .limit(10)
+      .populate("author", "name surname img");
     res.send(articles);
   } catch (error) {
     next(error);
@@ -21,7 +23,7 @@ articlesRouter.get("/", async (req, res, next) => {
 articlesRouter.get("/:id", async (req, res, next) => {
   try {
     const id = req.params.id;
-    const article = await ArticleSchema.findById(id);
+    const article = await ArticleSchema.findById(id).populate("author", "name surname img").populate("claps", "name surname img").populate("reviews.author", "name surname img");
     if (article) {
       res.send(article);
     } else {
@@ -39,6 +41,14 @@ articlesRouter.post("/", async (req, res, next) => {
   try {
     const newarticle = new ArticleSchema(req.body);
     const { _id } = await newarticle.save();
+    await UserSchema.findByIdAndUpdate(
+      req.body.author,
+      { $push: { articles: _id } },
+      {
+        runValidators: true,
+        new: true,
+      }
+    );
     res.status(201).send(_id);
   } catch (error) {
     next(error);
@@ -66,6 +76,14 @@ articlesRouter.put("/:id", async (req, res, next) => {
 articlesRouter.delete("/:id", async (req, res, next) => {
   try {
     const article = await ArticleSchema.findByIdAndDelete(req.params.id);
+    await UserSchema.findByIdAndUpdate(
+      req.body.author,
+      { $pull: { articles: req.params.id } },
+      {
+        runValidators: true,
+        new: true,
+      }
+    );
     if (article) {
       res.send("Deleted");
     } else {
@@ -83,7 +101,12 @@ articlesRouter.delete("/:id", async (req, res, next) => {
 articlesRouter.get("/:id/reviews", async (req, res, next) => {
   try {
     const id = req.params.id;
-    const { reviews } = await ArticleSchema.findById(id);
+    const { reviews } = await ArticleSchema.findById(id)
+      .sort({ createdAt: -1 })
+      .skip(req.query.page && (req.query.page - 1) * 10)
+      .limit(10)
+      .populate("reviews.author", "name surname img");
+
     if (reviews) {
       res.send(reviews);
     } else {
@@ -108,7 +131,7 @@ articlesRouter.get("/:id/reviews/:reviewID", async (req, res, next) => {
           $elemMatch: { _id: Types.ObjectId(rId) },
         },
       }
-    );
+    ).populate("reviews.author", "name surname img");
     if (reviews) {
       res.send(reviews[0]);
     } else {
@@ -131,7 +154,10 @@ articlesRouter.post("/:id/reviews", async (req, res, next) => {
         runValidators: true,
         new: true,
       }
-    );
+    )
+      .populate("author", "name surname img")
+      .populate("claps", "name surname img")
+      .populate("reviews.author", "name surname img");
     if (article) {
       res.send(article);
     } else {
@@ -165,7 +191,10 @@ articlesRouter.put("/:id/reviews/:reviewID", async (req, res, next) => {
           runValidators: true,
           new: true,
         }
-      );
+      )
+        .populate("author", "name surname img")
+        .populate("claps", "name surname img")
+        .populate("reviews.author", "name surname img");
 
       if (article) {
         res.send(article);
@@ -194,7 +223,10 @@ articlesRouter.delete("/:id/reviews/:reviewID", async (req, res, next) => {
       {
         new: true,
       }
-    );
+    )
+      .populate("author", "name surname img")
+      .populate("claps", "name surname img")
+      .populate("reviews.author", "name surname img");
     if (article) {
       res.send(article);
     } else {
@@ -207,4 +239,29 @@ articlesRouter.delete("/:id/reviews/:reviewID", async (req, res, next) => {
   }
 });
 
+//claps
+articlesRouter.post("/:id/claps", async (req, res, next) => {
+  try {
+    const article = await ArticleSchema.findByIdAndUpdate(
+      req.params.id,
+      { $push: { claps: req.body._id } },
+      {
+        runValidators: true,
+        new: true,
+      }
+    )
+      .populate("author", "name surname img")
+      .populate("claps", "name surname img")
+      .populate("reviews.author", "name surname img");
+    if (article) {
+      res.send(article);
+    } else {
+      const error = new Error(`article with id ${req.params.id} not found`);
+      error.httpStatusCode = 404;
+      next(error);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
 module.exports = articlesRouter;
