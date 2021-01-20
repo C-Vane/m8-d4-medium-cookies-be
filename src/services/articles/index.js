@@ -75,17 +75,18 @@ articlesRouter.put("/:id", async (req, res, next) => {
 
 articlesRouter.delete("/:id", async (req, res, next) => {
   try {
-    const article = await ArticleSchema.findByIdAndDelete(req.params.id);
+    const { author } = await ArticleSchema.findById(req.params.id);
     await UserSchema.findByIdAndUpdate(
-      req.body.author,
+      author._id,
       { $pull: { articles: req.params.id } },
       {
         runValidators: true,
         new: true,
       }
     );
+    const article = await ArticleSchema.findByIdAndDelete(req.params.id);
     if (article) {
-      res.send("Deleted");
+      res.send({ ...article, ok: true });
     } else {
       const error = new Error(`article with id ${req.params.id} not found`);
       error.httpStatusCode = 404;
