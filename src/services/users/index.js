@@ -12,7 +12,7 @@ usersRouter.post("/register", async (req, res, next) => {
   try {
     const newUser = new UserSchema({ img: "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg", ...req.body });
     const { _id } = await newUser.save();
-    res.status(201).send(_id);
+    res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
