@@ -1,4 +1,4 @@
-#Add token based auth to your previous backend. 
+##Add token based auth to your previous backend. 
 
 Create in your database a "user" collection with username and password, using the right tool to hash passwords.
 
