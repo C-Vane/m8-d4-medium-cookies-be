@@ -4,8 +4,8 @@ const { join } = require("path");
 const listEndpoints = require("express-list-endpoints");
 const mongoose = require("mongoose");
 
-const articlesRouter = require("./services/articles");
-const usersRouter = require("./services/users");
+const articlesRouter = require("./services/articles/index");
+const usersRouter = require("./services/users/index");
 
 const { notFoundHandler, badRequestHandler, genericErrorHandler } = require("./errorHandlers");
 

@@ -21,11 +21,13 @@
   },
   "homepage": "https://github.com/C-Vane/M6-D2-BE#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cloudinary": "^1.23.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "express-list-endpoints": "^5.0.0",
     "express-validator": "^6.9.2",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.11.11",
     "multer": "^1.4.2",
     "multer-storage-cloudinary": "^4.0.0",

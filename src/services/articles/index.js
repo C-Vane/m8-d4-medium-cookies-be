@@ -1,11 +1,14 @@
-const { text } = require("express");
 const express = require("express");
+
 const { Mongoose, Types } = require("mongoose");
 
 const ArticleSchema = require("./schema");
+
 const UserSchema = require("./schema");
 
 const articlesRouter = express.Router();
+
+const { authorize } = require("../auth/middleware");
 
 articlesRouter.get("/", async (req, res, next) => {
   try {
@@ -37,12 +40,12 @@ articlesRouter.get("/:id", async (req, res, next) => {
   }
 });
 
-articlesRouter.post("/", async (req, res, next) => {
+articlesRouter.post("/", authorize, async (req, res, next) => {
   try {
-    const newarticle = new ArticleSchema(req.body);
+    const newarticle = new ArticleSchema({ ...req.body, author: req.user._id });
     const { _id } = await newarticle.save();
     await UserSchema.findByIdAndUpdate(
-      req.body.author,
+      req.user._id,
       { $push: { articles: _id } },
       {
         runValidators: true,
@@ -55,16 +58,16 @@ articlesRouter.post("/", async (req, res, next) => {
   }
 });
 
-articlesRouter.put("/:id", async (req, res, next) => {
+articlesRouter.put("/:id", authorize, async (req, res, next) => {
   try {
-    const article = await ArticleSchema.findByIdAndUpdate(req.params.id, req.body, {
+    const article = await ArticleSchema.findOneAndUpdate({ _id: req.params.id, author: req.user._id }, req.body, {
       runValidators: true,
       new: true,
     });
     if (article) {
       res.send(article);
     } else {
-      const error = new Error(`article with id ${req.params.id} not found`);
+      const error = new Error(`article with id ${req.params.id} not found or unauthorized to make changes`);
       error.httpStatusCode = 404;
       next(error);
     }
@@ -75,16 +78,15 @@ articlesRouter.put("/:id", async (req, res, next) => {
 
 articlesRouter.delete("/:id", async (req, res, next) => {
   try {
-    const { author } = await ArticleSchema.findById(req.params.id);
     await UserSchema.findByIdAndUpdate(
-      author._id,
+      req.user._id,
       { $pull: { articles: req.params.id } },
       {
         runValidators: true,
         new: true,
       }
     );
-    const article = await ArticleSchema.findByIdAndDelete(req.params.id);
+    const article = await ArticleSchema.findOneAndDelete({ _id: req.params.id, author: req.user._id });
     if (article) {
       res.send({ ...article, ok: true });
     } else {
@@ -146,11 +148,11 @@ articlesRouter.get("/:id/reviews/:reviewID", async (req, res, next) => {
   }
 });
 //post a review
-articlesRouter.post("/:id/reviews", async (req, res, next) => {
+articlesRouter.post("/:id/reviews", authorize, async (req, res, next) => {
   try {
     const article = await ArticleSchema.findByIdAndUpdate(
       req.params.id,
-      { $push: { reviews: { ...req.body, createdAt: new Date() } } },
+      { $push: { reviews: { ...req.body, createdAt: new Date(), author: req.user._id } } },
       {
         runValidators: true,
         new: true,
@@ -171,7 +173,7 @@ articlesRouter.post("/:id/reviews", async (req, res, next) => {
   }
 });
 //Edit A review
-articlesRouter.put("/:id/reviews/:reviewID", async (req, res, next) => {
+articlesRouter.put("/:id/reviews/:reviewID", authorize, async (req, res, next) => {
   try {
     const id = req.params.id;
     const rId = req.params.reviewID;
@@ -183,7 +185,7 @@ articlesRouter.put("/:id/reviews/:reviewID", async (req, res, next) => {
         },
       }
     );
-    if (reviews[0]) {
+    if (reviews[0] && reviews[0].author === req.user._id) {
       const currentReview = { ...reviews[0].toObject(), ...req.body, lastUpdated: new Date() };
       const article = await ArticleSchema.findOneAndUpdate(
         { _id: Types.ObjectId(id), "reviews._id": Types.ObjectId(rId) },
@@ -213,26 +215,40 @@ articlesRouter.put("/:id/reviews/:reviewID", async (req, res, next) => {
     next(error);
   }
 });
-articlesRouter.delete("/:id/reviews/:reviewID", async (req, res, next) => {
+
+articlesRouter.delete("/:id/reviews/:reviewID", authorize, async (req, res, next) => {
   try {
     const id = req.params.id;
     const rId = req.params.reviewID;
-
-    const article = await ArticleSchema.findByIdAndUpdate(
-      id,
-      { $pull: { reviews: { _id: Types.ObjectId(rId) } } },
+    const { reviews } = await ArticleSchema.findOne(
+      { _id: Types.ObjectId(id) },
       {
-        new: true,
+        reviews: {
+          $elemMatch: { _id: Types.ObjectId(rId) },
+        },
       }
-    )
-      .populate("author", "name surname img")
-      .populate("claps", "name surname img")
-      .populate("reviews.author", "name surname img");
-    if (article) {
-      res.send(article);
+    );
+    if (reviews[0] && reviews[0].author === req.user._id) {
+      const article = await ArticleSchema.findByIdAndUpdate(
+        id,
+        { $pull: { reviews: { _id: Types.ObjectId(rId) } } },
+        {
+          new: true,
+        }
+      )
+        .populate("author", "name surname img")
+        .populate("claps", "name surname img")
+        .populate("reviews.author", "name surname img");
+      if (article) {
+        res.send(article);
+      } else {
+        const error = new Error(`No reviews for article with id ${req.params.id} were found`);
+        error.httpStatusCode = 404;
+        next(error);
+      }
     } else {
-      const error = new Error(`No reviews for article with id ${req.params.id} were found`);
-      error.httpStatusCode = 404;
+      const error = new Error(`No reviews for article with id ${req.params.id} were found or not allowed to make changes`);
+      error.httpStatusCode = 403;
       next(error);
     }
   } catch (error) {
@@ -241,11 +257,11 @@ articlesRouter.delete("/:id/reviews/:reviewID", async (req, res, next) => {
 });
 
 //claps
-articlesRouter.post("/:id/claps", async (req, res, next) => {
+articlesRouter.post("/:id/clap", authorize, async (req, res, next) => {
   try {
     const article = await ArticleSchema.findByIdAndUpdate(
       req.params.id,
-      { $push: { claps: req.body._id } },
+      { $push: { claps: req.user._id } },
       {
         runValidators: true,
         new: true,

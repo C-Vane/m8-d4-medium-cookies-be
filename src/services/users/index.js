@@ -1,10 +1,81 @@
-const { text } = require("express");
 const express = require("express");
-const { Mongoose, Types } = require("mongoose");
 
 const UserSchema = require("./schema");
 
 const usersRouter = express.Router();
+
+const { authorize } = require("../auth/middleware");
+
+const { authenticate } = require("../auth/tools");
+
+usersRouter.post("/register", async (req, res, next) => {
+  try {
+    const newUser = new UserSchema({ img: "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg", ...req.body });
+    const user = await newUser.save();
+    const tockens = await authenticate(user);
+    res.status(201).send(tockens);
+  } catch (error) {
+    next(error);
+  }
+});
+
+usersRouter.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const user = await UserSchema.findByCredentials(email, password);
+    const tockens = await authenticate(user);
+    res.status(201).send(tockens);
+  } catch (error) {
+    next(error);
+  }
+});
+
+usersRouter.post("/logOut", authorize, async (req, res, next) => {
+  try {
+    if (req.body.refreshToken) {
+      req.user.refreshTokens = req.user.refreshTokens.filter((t) => t.token !== req.body.refreshToken);
+      await req.user.save();
+      res.status(201).send();
+    } else {
+      const err = new Error("Token not provided");
+      err.status = 401;
+      next(err);
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+usersRouter.post("/logOutAll", authorize, async (req, res, next) => {
+  try {
+    req.user.refreshTokens = [];
+    await req.user.save();
+    res.status(201).send();
+  } catch (error) {
+    next(error);
+  }
+});
+usersRouter.post("/refreshTocken", authorize, async (req, res, next) => {
+  const oldRefreshToken = req.body.refreshToken;
+  if (!oldRefreshToken) {
+    const err = new Error("Refresh token missing");
+    err.httpStatusCode = 400;
+    next(err);
+  } else {
+    try {
+      const newTokens = await refreshToken(oldRefreshToken);
+      if (newTokens) {
+        res.status(201).send(newTokens);
+      } else {
+        const err = new Error("Provided refresh tocken is incorrect");
+        err.httpStatusCode = 403;
+        next(err);
+      }
+    } catch (error) {
+      next(error);
+    }
+  }
+});
 
 usersRouter.get("/", async (req, res, next) => {
   try {
@@ -18,12 +89,10 @@ usersRouter.get("/", async (req, res, next) => {
   }
 });
 
-usersRouter.get("/:id", async (req, res, next) => {
+usersRouter.get("/me", authorize, async (req, res, next) => {
   try {
-    const id = req.params.id;
-    const user = await UserSchema.findById(id, { password: 0, email: 0 }).populate("articles");
-    if (user) {
-      res.send(user);
+    if (req.user) {
+      res.send(req.user);
     } else {
       const error = new Error();
       error.httpStatusCode = 404;
@@ -32,42 +101,16 @@ usersRouter.get("/:id", async (req, res, next) => {
   } catch (error) {
     console.log(error);
     next("While reading users list a problem occurred!");
-  }
-});
-usersRouter.get("/:id/user", async (req, res, next) => {
-  try {
-    const id = req.params.id;
-    const user = await UserSchema.findById(id).populate("articles");
-    if (user) {
-      res.send(user);
-    } else {
-      const error = new Error();
-      error.httpStatusCode = 404;
-      next(error);
-    }
-  } catch (error) {
-    console.log(error);
-    next("While reading users list a problem occurred!");
-  }
-});
-usersRouter.post("/", async (req, res, next) => {
-  try {
-    const newUser = new UserSchema(req.body);
-    const { _id } = await newUser.save();
-    res.status(201).send(_id);
-  } catch (error) {
-    next(error);
   }
 });
 
-usersRouter.put("/:id", async (req, res, next) => {
+usersRouter.put("/me", authorize, async (req, res, next) => {
   try {
-    const user = await UserSchema.findByIdAndUpdate(req.params.id, req.body, {
-      runValidators: true,
-      new: true,
-    });
-    if (user) {
-      res.send(user);
+    if (req.user) {
+      const updates = Object.keys(req.body);
+      updates.forEach((update) => (req.user[update] = req.body[update]));
+      await req.user.save();
+      res.send(req.user);
     } else {
       const error = new Error(`user with id ${req.params.id} not found`);
       error.httpStatusCode = 404;
@@ -78,11 +121,10 @@ usersRouter.put("/:id", async (req, res, next) => {
   }
 });
 
-usersRouter.delete("/:id", async (req, res, next) => {
+usersRouter.delete("/me", authorize, async (req, res, next) => {
   try {
-    const user = await UserSchema.findByIdAndDelete(req.params.id);
-    if (user) {
-      res.send("Deleted");
+    if (req.user) {
+      await req.user.deleteOne(res.send("Deleted"));
     } else {
       const error = new Error(`user with id ${req.params.id} not found`);
       error.httpStatusCode = 404;
