@@ -1,4 +1,4 @@
-##Add token based auth to your previous backend. 
+### <h1>Add token based auth to your previous backend. </h1>
 
 Create in your database a "user" collection with username and password, using the right tool to hash passwords.
 
@@ -11,4 +11,4 @@ Create a service test with two endpoints:
 
 [EXTRA]
 
-Implement refresh token technique
+- Implement refresh token technique
