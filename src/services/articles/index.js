@@ -4,7 +4,7 @@ const { Mongoose, Types } = require("mongoose");
 
 const ArticleSchema = require("./schema");
 
-const UserSchema = require("./schema");
+const UserSchema = require("../users/schema");
 
 const articlesRouter = express.Router();
 
@@ -52,7 +52,7 @@ articlesRouter.post("/", authorize, async (req, res, next) => {
         new: true,
       }
     );
-    res.status(201).send(_id);
+    res.status(201).send({ _id });
   } catch (error) {
     next(error);
   }
@@ -76,7 +76,7 @@ articlesRouter.put("/:id", authorize, async (req, res, next) => {
   }
 });
 
-articlesRouter.delete("/:id", async (req, res, next) => {
+articlesRouter.delete("/:id", authorize, async (req, res, next) => {
   try {
     await UserSchema.findByIdAndUpdate(
       req.user._id,

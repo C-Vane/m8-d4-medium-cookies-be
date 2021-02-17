@@ -11,9 +11,8 @@ const { authenticate } = require("../auth/tools");
 usersRouter.post("/register", async (req, res, next) => {
   try {
     const newUser = new UserSchema({ img: "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg", ...req.body });
-    const user = await newUser.save();
-    const tockens = await authenticate(user);
-    res.status(201).send(tockens);
+    const { _id } = await newUser.save();
+    res.status(201).send(_id);
   } catch (error) {
     next(error);
   }
@@ -23,8 +22,14 @@ usersRouter.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const user = await UserSchema.findByCredentials(email, password);
-    const tockens = await authenticate(user);
-    res.status(201).send(tockens);
+    if (user) {
+      const tockens = await authenticate(user);
+      res.status(201).send(tockens);
+    } else {
+      const err = new Error("User with email and password not found");
+      err.status = 401;
+      next(err);
+    }
   } catch (error) {
     next(error);
   }
@@ -35,7 +40,7 @@ usersRouter.post("/logOut", authorize, async (req, res, next) => {
     if (req.body.refreshToken) {
       req.user.refreshTokens = req.user.refreshTokens.filter((t) => t.token !== req.body.refreshToken);
       await req.user.save();
-      res.status(201).send();
+      res.status(201).send({ ok: true });
     } else {
       const err = new Error("Token not provided");
       err.status = 401;
@@ -50,7 +55,7 @@ usersRouter.post("/logOutAll", authorize, async (req, res, next) => {
   try {
     req.user.refreshTokens = [];
     await req.user.save();
-    res.status(201).send();
+    res.status(201).send({ ok: true });
   } catch (error) {
     next(error);
   }
@@ -92,7 +97,8 @@ usersRouter.get("/", async (req, res, next) => {
 usersRouter.get("/me", authorize, async (req, res, next) => {
   try {
     if (req.user) {
-      res.send(req.user);
+      const user = await UserSchema.findById(req.user._id).populate("articles");
+      res.send(user);
     } else {
       const error = new Error();
       error.httpStatusCode = 404;

@@ -1,6 +1,6 @@
 const { Schema } = require("mongoose");
 const mongoose = require("mongoose");
-
+mongoose.set("useFindAndModify", false);
 const ArticleSchema = new Schema(
   {
     headLine: {
