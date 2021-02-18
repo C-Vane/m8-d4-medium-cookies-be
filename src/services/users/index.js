@@ -99,7 +99,7 @@ usersRouter.post("/refreshToken", async (req, res, next) => {
     try {
       const newTokens = await refreshToken(oldRefreshToken);
       if (newTokens) {
-        res.cookie("accessToken", newTokens.token, {
+        res.cookie("token", newTokens.token, {
           httpOnly: true,
         });
         res.cookie("refreshToken", newTokens.refreshToken, {
