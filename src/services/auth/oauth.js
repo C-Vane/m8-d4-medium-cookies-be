@@ -9,7 +9,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_ID,
       clientSecret: process.env.GOOGLE_SECRET,
-      callbackURL: "http://localhost:3002/users/googleRedirect",
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
     async (request, accessToken, refreshToken, profile, next) => {
       const newUser = {
@@ -17,7 +17,7 @@ passport.use(
         name: profile.name.givenName,
         surname: profile.name.familyName,
         email: profile.emails[0].value,
-        img: profile.photos.value || "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg",
+        img: profile.photos[0].value || "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg",
       };
 
       try {
