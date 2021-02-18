@@ -17,7 +17,7 @@ passport.use(
         name: profile.name.givenName,
         surname: profile.name.familyName,
         email: profile.emails[0].value,
-        img: profile.photos[0].value || "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg",
+        img: "https://thumbs.dreamstime.com/b/default-avatar-profile-trendy-style-social-media-user-icon-187599373.jpg",
       };
 
       try {
