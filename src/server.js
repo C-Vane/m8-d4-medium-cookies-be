@@ -13,13 +13,19 @@ const passport = require("passport");
 
 const oauth = require("./services/auth/oauth");
 
+const cookieParser = require("cookie-parser");
+
 const server = express();
 
 const port = process.env.PORT || 3001;
 
 const staticFolderPath = join(__dirname, "../public");
+
 server.use(express.static(staticFolderPath));
+
 server.use(express.json());
+
+server.use(cookieParser());
 
 const whitelist = [process.env.FE_URL];
 
@@ -31,7 +37,7 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  //credentials: true,
+  credentials: true,
 };
 server.use(cors(corsOptions));
 

@@ -16,15 +16,15 @@ usersRouter.get("/googleLogin", passport.authenticate("google", { scope: ["profi
 
 usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, res, next) => {
   try {
-    /*     res.cookie("accessToken", req.user.tokens.token, {
+    res.cookie("token", req.user.tokens.token, {
       httpOnly: true,
     });
     res.cookie("refreshToken", req.user.tokens.refreshToken, {
       httpOnly: true,
       path: "/users/refreshToken",
-    }); */
+    });
 
-    res.status(200).redirect(`${process.env.FE_URL}?token=${req.user.tokens.token}&refreshToken=${req.user.tokens.refreshToken}`);
+    res.status(200).redirect(process.env.FE_URL);
   } catch (error) {
     next(error);
   }
@@ -45,8 +45,15 @@ usersRouter.post("/login", async (req, res, next) => {
     const { email, password } = req.body;
     const user = await UserSchema.findByCredentials(email, password);
     if (user) {
-      const tockens = await authenticate(user);
-      res.status(201).send(tockens);
+      const tokens = await authenticate(user);
+      res.cookie("token", tokens.token, {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", tokens.refreshToken, {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      });
+      res.status(201).send({ ok: true });
     } else {
       const err = new Error("User with email and password not found");
       err.status = 401;
@@ -83,7 +90,7 @@ usersRouter.post("/logOutAll", authorize, async (req, res, next) => {
   }
 });
 usersRouter.post("/refreshToken", async (req, res, next) => {
-  const oldRefreshToken = req.body.refreshToken;
+  const oldRefreshToken = req.cookies.refreshToken;
   if (!oldRefreshToken) {
     const err = new Error("Refresh token missing");
     err.httpStatusCode = 400;
@@ -92,7 +99,14 @@ usersRouter.post("/refreshToken", async (req, res, next) => {
     try {
       const newTokens = await refreshToken(oldRefreshToken);
       if (newTokens) {
-        res.status(201).send(newTokens);
+        res.cookie("accessToken", newTokens.token, {
+          httpOnly: true,
+        });
+        res.cookie("refreshToken", newTokens.refreshToken, {
+          httpOnly: true,
+          path: "/users/refreshToken",
+        });
+        res.status(201).send({ ok: true });
       } else {
         const err = new Error("Provided refresh tocken is incorrect");
         err.httpStatusCode = 403;
