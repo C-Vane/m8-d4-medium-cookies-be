@@ -66,9 +66,16 @@ usersRouter.post("/login", async (req, res, next) => {
 
 usersRouter.post("/logOut", authorize, async (req, res, next) => {
   try {
-    if (req.body.refreshToken) {
-      req.user.refreshTokens = req.user.refreshTokens.filter((t) => t.token !== req.body.refreshToken);
+    if (req.token) {
+      req.user.refreshTokens = req.user.refreshTokens.filter((t) => t.token !== req.token);
       await req.user.save();
+      res.cookie("token", "", {
+        httpOnly: true,
+      });
+      res.cookie("refreshToken", "", {
+        httpOnly: true,
+        path: "/users/refreshToken",
+      });
       res.status(201).send({ ok: true });
     } else {
       const err = new Error("Token not provided");
