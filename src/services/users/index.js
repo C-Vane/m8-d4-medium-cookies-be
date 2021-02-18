@@ -6,7 +6,29 @@ const usersRouter = express.Router();
 
 const { authorize } = require("../auth/middleware");
 
-const { authenticate } = require("../auth/tools");
+const { authenticate, refreshToken } = require("../auth/tools");
+
+const passport = require("passport");
+
+//GOOGLE LOG IN
+
+usersRouter.get("/googleLogin", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, res, next) => {
+  try {
+    /*     res.cookie("accessToken", req.user.tokens.accessToken, {
+      httpOnly: true,
+    });
+    res.cookie("refreshToken", req.user.tokens.refreshToken, {
+      httpOnly: true,
+      path: "/users/refreshToken",
+    }); */
+
+    res.status(200).redirect(`${proccess.env.FE_URL}?token=${req.user.tokens.accessToken}&refreshToken=${req.user.tokens.refreshToken}`);
+  } catch (error) {
+    next(error);
+  }
+});
 
 usersRouter.post("/register", async (req, res, next) => {
   try {
@@ -60,7 +82,7 @@ usersRouter.post("/logOutAll", authorize, async (req, res, next) => {
     next(error);
   }
 });
-usersRouter.post("/refreshTocken", authorize, async (req, res, next) => {
+usersRouter.post("/refreshToken", async (req, res, next) => {
   const oldRefreshToken = req.body.refreshToken;
   if (!oldRefreshToken) {
     const err = new Error("Refresh token missing");

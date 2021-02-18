@@ -11,6 +11,12 @@ const notFoundHandler = (err, req, res, next) => {
   }
   next(err);
 };
+const forbiddenHandler = (err, req, res, next) => {
+  if (err.httpStatusCode === 403) {
+    res.status(403).send(err.message || "Forbidden!");
+  }
+  next(err);
+};
 
 const genericErrorHandler = (err, req, res, next) => {
   if (!res.headersSent) {
@@ -21,5 +27,6 @@ const genericErrorHandler = (err, req, res, next) => {
 module.exports = {
   badRequestHandler,
   notFoundHandler,
+  forbiddenHandler,
   genericErrorHandler,
 };

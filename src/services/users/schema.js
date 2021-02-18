@@ -19,12 +19,14 @@ const UserSchema = new Schema(
     },
     password: {
       type: String,
-      required: true,
     },
     articles: [{ type: Schema.Types.ObjectId, ref: "Article", required: true }],
     img: {
       type: String,
       required: true,
+    },
+    googleId: {
+      type: String,
     },
     refreshTokens: [{ token: { type: String, required: true } }],
   },
@@ -49,7 +51,12 @@ UserSchema.statics.findByCredentials = async function (email, password) {
     return null;
   }
 };
-
+UserSchema.pre("validate", async function (next) {
+  const user = this;
+  const plainPW = user.password;
+  const google = user.googleId;
+  google || plainPW ? next() : next(new Error("No password provided"));
+});
 UserSchema.pre("save", async function (next) {
   const user = this;
   const plainPW = user.password;
