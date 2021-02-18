@@ -21,7 +21,7 @@ const staticFolderPath = join(__dirname, "../public");
 server.use(express.static(staticFolderPath));
 server.use(express.json());
 
-const whitelist = ["http://localhost:3000"];
+const whitelist = [process.env.FE_URL];
 
 const corsOptions = {
   origin: (origin, callback) => {
@@ -31,7 +31,7 @@ const corsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true,
+  //credentials: true,
 };
 server.use(cors(corsOptions));
 

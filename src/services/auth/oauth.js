@@ -12,7 +12,6 @@ passport.use(
       callbackURL: "http://localhost:3002/users/googleRedirect",
     },
     async (request, accessToken, refreshToken, profile, next) => {
-      console.log(profile);
       const newUser = {
         googleId: profile.id,
         name: profile.name.givenName,

@@ -16,7 +16,7 @@ usersRouter.get("/googleLogin", passport.authenticate("google", { scope: ["profi
 
 usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, res, next) => {
   try {
-    /*     res.cookie("accessToken", req.user.tokens.accessToken, {
+    /*     res.cookie("accessToken", req.user.tokens.token, {
       httpOnly: true,
     });
     res.cookie("refreshToken", req.user.tokens.refreshToken, {
@@ -24,7 +24,7 @@ usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, 
       path: "/users/refreshToken",
     }); */
 
-    res.status(200).redirect(`${proccess.env.FE_URL}?token=${req.user.tokens.accessToken}&refreshToken=${req.user.tokens.refreshToken}`);
+    res.status(200).redirect(`${process.env.FE_URL}?token=${req.user.tokens.token}&refreshToken=${req.user.tokens.refreshToken}`);
   } catch (error) {
     next(error);
   }
