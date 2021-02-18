@@ -4,11 +4,11 @@ Create in your database a "user" collection with username and password, using th
 
 Create a service test with two endpoints:
 
-    - Register (username, password): creates a new valid user
-    - Login: returns a token for access API
-    - Enable Authorization on the other endpoints making them available only to registered users
+    - Use the right Passport strategy to connect Google to your backend
+    - Enable the Google login in your application creating needed endpoints
+    - Integrate everything with standard jwt
 
 
 [EXTRA]
 
-- Implement refresh token technique
+    - Use cookies
