@@ -26,7 +26,7 @@ server.use(express.static(staticFolderPath));
 server.use(express.json());
 
 server.use((req, res, next) => {
-  console.log(req.headers);
+  console.log(req.headers.cookie);
   next();
 });
 
