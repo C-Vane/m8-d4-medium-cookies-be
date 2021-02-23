@@ -24,7 +24,7 @@ usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, 
       path: "/users/refreshToken",
     });
 
-    res.status(200).redirect(process.env.FE_URL);
+    res.status(200).redirect(process.env.FE_PROD_URL || process.env.FE_DEV_URL);
   } catch (error) {
     next(error);
   }

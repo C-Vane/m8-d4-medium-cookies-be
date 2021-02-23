@@ -27,7 +27,7 @@ server.use(express.json());
 
 server.use(cookieParser());
 
-const whitelist = [process.env.FE_URL];
+const whitelist = [process.env.FE_PROD_URL, process.env.FE_DEV_URL];
 
 const corsOptions = {
   origin: (origin, callback) => {
