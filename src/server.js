@@ -25,6 +25,11 @@ server.use(express.static(staticFolderPath));
 
 server.use(express.json());
 
+server.use((req, res, next) => {
+  console.log(req.headers);
+  next();
+});
+
 server.use(cookieParser());
 
 const whitelist = [process.env.FE_PROD_URL, process.env.FE_DEV_URL];
@@ -39,6 +44,7 @@ const corsOptions = {
   },
   credentials: true,
 };
+
 server.use(cors(corsOptions));
 
 server.use(passport.initialize());
