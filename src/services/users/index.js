@@ -18,10 +18,12 @@ usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, 
   try {
     res.cookie("token", req.user.tokens.token, {
       httpOnly: true,
+      sameSite: "none",
     });
     res.cookie("refreshToken", req.user.tokens.refreshToken, {
       httpOnly: true,
       path: "/users/refreshToken",
+      sameSite: "none",
     });
 
     res.status(200).redirect(process.env.FE_PROD_URL || process.env.FE_DEV_URL);
