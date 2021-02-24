@@ -19,11 +19,13 @@ usersRouter.get("/googleRedirect", passport.authenticate("google"), async (req, 
     res.cookie("token", req.user.tokens.token, {
       httpOnly: true,
       sameSite: "none",
+      secure: true,
     });
     res.cookie("refreshToken", req.user.tokens.refreshToken, {
       httpOnly: true,
       path: "/users/refreshToken",
       sameSite: "none",
+      secure: true,
     });
 
     res.status(200).redirect(process.env.FE_PROD_URL || process.env.FE_DEV_URL);
@@ -50,10 +52,14 @@ usersRouter.post("/login", async (req, res, next) => {
       const tokens = await authenticate(user);
       res.cookie("token", tokens.token, {
         httpOnly: true,
+        sameSite: "none",
+        secure: true,
       });
       res.cookie("refreshToken", tokens.refreshToken, {
         httpOnly: true,
         path: "/users/refreshToken",
+        sameSite: "none",
+        secure: true,
       });
       res.status(201).send({ ok: true });
     } else {
