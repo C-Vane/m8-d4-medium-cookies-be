@@ -79,10 +79,14 @@ usersRouter.post("/logOut", authorize, async (req, res, next) => {
       await req.user.save();
       res.cookie("token", "", {
         httpOnly: true,
+        sameSite: "none",
+        secure: true,
       });
       res.cookie("refreshToken", "", {
         httpOnly: true,
         path: "/users/refreshToken",
+        sameSite: "none",
+        secure: true,
       });
       res.status(201).send({ ok: true });
     } else {
