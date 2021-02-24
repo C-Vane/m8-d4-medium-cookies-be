@@ -188,7 +188,6 @@ articlesRouter.put("/:id/reviews/:reviewID", authorize, async (req, res, next) =
 
     if (reviews[0] && reviews[0].author.toString() === req.user._id.toString()) {
       const currentReview = { ...reviews[0].toObject(), ...req.body, lastUpdated: new Date() };
-      console.log(currentReview);
       const article = await ArticleSchema.findOneAndUpdate(
         { _id: Types.ObjectId(id), "reviews._id": Types.ObjectId(rId) },
         { $set: { "reviews.$": currentReview } },
