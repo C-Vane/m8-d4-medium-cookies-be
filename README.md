@@ -12,4 +12,4 @@ Implement:
 
     - Use cookies
 
-### FINISHED AND DEPLOYED ON https://teststrive.azurewebsites.net
+### FINISHED AND DEPLOYED ON https://medium-c.herokuapp.com/
